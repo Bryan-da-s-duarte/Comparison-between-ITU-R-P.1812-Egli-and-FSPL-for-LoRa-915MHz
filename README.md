@@ -8,6 +8,8 @@ Database 2: F. M. Ortiz, T. T. Almeida, A. E. Ferreira, and L. H. Costa, “Cara
 Path loss datasets were obtained by processing and analyzing the graphics of the scenarios presented in the references (successive arithmetic mean calculations and link budget).
 Other input data (such as terrain profile, representative clutter height, distance vector, latitude, longitude, clutter type for each profile point, radio-climatic zones, etc) were obtained by analyzing the links and the considered area, with the help of Google Earth image software. 
 
+The input data of the dataset is included, as vectors, in the 4 codes. 
+
 Frequency used: 915MHz
 Technology: LoRa. 
 
