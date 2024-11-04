@@ -121,7 +121,7 @@ lam_t = [lam_1t; lam_2t; lam_3t; lam_4t; lam_5t];
 phi_r = [phi_1r; phi_1r; phi_1r; phi_2r; phi_2r];
 lam_r = [lam_1r; lam_1r; lam_1r; lam_2r; lam_2r];
 
-pol = 2; %tipo de polarização: (1) horizontal, (2) vertical (provided by the author of the reference)
+pol = 2; %polarization type: (1) horizontal, (2) vertical (provided by the author of the reference)
 %-------------------------------------------------------------------------------
 
 %Free Space Path Loss model (FSPL)
