@@ -7,8 +7,9 @@ clc, clear all, format short
 
 %DATABASE 2 REFERENCE: F. M. Ortiz, T. T. Almeida, A. E. Ferreira, and L. H. Costa, “Caracterização de desempenho de uma rede LoRa em ambientes urbanos: simulação vs. prática (in Portuguese),” in III Workshop de Computação Urbana (COURB), Gramado, Brazil, 2019, pp. 167–180, https://doi.org/10.5753/courb.2019.7476.
 
-%ADOPTED EXTRACTION METHOD: measurement PL data were obtained by analyzing the received power graphic of the reference. Horizontal lines were drawn in the graphic for known received power values, obtained from successive arithmetic mean calculations. Once a power sample was detected between two horizontal lines, a new arithmetic mean calculation was made, using those known power values. For the result of the calculation, a new horizontal line was drawn. The process continued until a new horizontal line passed through the received power sample. After, the link budget was used to obtain the associated PL data. 
-Other input values, such as terrain profile, representative clutter height, distance vector, latitude, longitude, clutter type for each profile point, radio-climatic zones, were obtained by mapping the links in Google Earth. 
+%ADOPTED EXTRACTION METHOD: measurement PL data were obtained by analyzing the received power graphic of the reference. Horizontal lines were drawn in the graphic for known received power values, obtained from successive arithmetic mean calculations. Once a power sample was detected between two horizontal lines, 
+%a new arithmetic mean calculation was made, using those known power values. For the result of the calculation, a new horizontal line was drawn. The process continued until a new horizontal line passed through the received power sample. After, the link budget was used to obtain the associated PL data. 
+%Other input values, such as terrain profile, representative clutter height, distance vector, latitude, longitude, clutter type for each profile point, radio-climatic zones, were obtained by mapping the links in Google Earth. 
 
 %-------INPUT DATA--------------------------------------------------------
 
