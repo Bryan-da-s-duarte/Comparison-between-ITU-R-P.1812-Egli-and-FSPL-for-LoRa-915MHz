@@ -1,0 +1,530 @@
+clc, clear all, format short
+
+%AUTHORS: BRYAN DA SILVA DUARTE and MAURICIO HENRIQUE COSTA DIAS
+%
+%THIS SCRIPT COMPARES THE PREDICTED PATH LOSS (PL) FOR DIFFERENT LINKS IN THE SAME CHANNEL. 
+%PROPAGATION MODELS: EGLI, FREE SPACE PATH LOSS (FSPL), ITU-R P.1812-5 APPROACH 2
+
+%DATABASE 1 REFERENCE: H. O. Bueno, “Otimização da Seleção de Parâmetros de Transmissão de Rede LORA Mesh de Gateway Single Channel em Ambientes Rurais (in Portuguese),” Master’s thesis, Universidade Federal de Uberlândia, Uberlândia, Brazil, 2021. 
+
+%ADOPTED EXTRACTION METHOD: measurement PL data were obtained by analyzing the PL graphic of the reference. The datasets were mapped and related to each link, and them, horizontal lines were drawn in the graphic for known PL values, obtained from successive arithmetic mean calculations. Once a PL sample was detected between two horizontal lines, a new arithmetic mean calculation was made, using those known PL values. For the result of the calculation, a new horizontal line was drawn. The process continued until a new horizontal line passed through the PL sample. 
+Other input values, such as terrain profile, representative clutter height, distance vector, latitude, longitude, clutter type for each profile point, radio-climatic zones, were obtained by mapping the links in Google Earth. 
+
+Nomenclature for the links: A-B, where ‘A’ and ‘B’ are the terminals of the link. 
+%-------INPUT DATA--------------------------------------------------------
+
+f = 915; %frequency in MHz
+TxRx = [0.115 0.183 0.256 0.442 0.508 0.551 0.561 0.573 0.651 0.679 0.906 0.917 ...
+1.089 1.109 1.123 1.277 1.300 1.373 1.394 1.548 1.755 1.777 1.877 1.992 2.027 ...
+2.246 2.335 2.352 3.546 3.750]; %vector containing the distances Tx-Rx for each link, in km -> 2-1, 1-3, 2-3, 3-4, 12-13, 17-11, %12-11, 1-4, 5-7, 2-4, 17-14, 7-18, 4-7, 17-12, 12-10, 17-13, 12-14, 7-19, 5-18, 4-18, 5-19, 4-19, 5-8, 4-8, 7-9, 4-9, 5-9, 12-15, %17-16, 12-16
+
+TxRx_log = 10*log10(TxRx/0.1);
+
+% data of the measurement campaign
+PL_m1 = [85 85 88.125 88.125 86.25 86.25 86.875 86.875 83.75 85]; %measured PL values (link 2-1)
+x_link1 = TxRx(1)*ones(1,length(PL_m1)); 
+x_link1 = 10*log10(x_link1/0.1); %vector used for plotting the measured PL values (link 2-1)
+PL_m2 = [120 110 105 115.625 114.375 110.625 108.75 106.25 103.75 120]; % measured PL values (link 1-3)
+x_link2 = TxRx(2)*ones(1,length(PL_m2));  
+x_link2 = 10*log10(x_link2/0.1); % vector used for plotting the measured PL values (link 1-3)
+PL_m3 = [110 113.75 114.375 111.875 110.625 107.8125 110 113.75 114.375 110]; % measured PL values (link 2-3)
+x_link3 = TxRx(3)*ones(1,length(PL_m3));  
+x_link3 = 10*log10(x_link3/0.1); % vector used for plotting the measured PL values (link 2-3)
+PL_m4 = [120 118.75 117.8125 113.75 115.625 120.9375 121.875 128.75 128.125 120]; % measured PL values (link 3-4)
+x_link4 = TxRx(4)*ones(1,length(PL_m4));  
+x_link4 = 10*log10(x_link4/0.1); % vector used for plotting the measured PL values (link 3-4)
+PL_m5 = [120 125 121.875 120.9375 118.75 123.125 123.75 124.0625 122.1875 120]; % measured PL values (link 12-13)
+x_link5 = TxRx(5)*ones(1,length(PL_m5));  
+x_link5 = 10*log10(x_link5/0.1); % vector used for plotting the measured PL values (link 12-13)
+PL_m6 = [106.875 105 105.625 105.9375 106.875 105 105 105.625 105.9375 105]; % measured PL values (link 17-11)
+x_link6 = TxRx(6)*ones(1,length(PL_m6));  
+x_link6 = 10*log10(x_link6/0.1); % vector used for plotting the measured PL values (link 17-11)
+PL_m7 = [117.8125 115.625 115.9375 114.375 117.8125 115.625 115.9375 114.375 117.8125 117.8125]; % measured PL values %(link 12-11)
+x_link7 = TxRx(7)*ones(1,length(PL_m7));  
+x_link7 = 10*log10(x_link7/0.1); % vector used for plotting the measured PL values (link 12-11)
+PL_m8 = [117.8125 115.625 115.9375 114.375 113.75 117.8125 115.625 115.9375 114.375 114.375]; % measured PL values %(link 1-4)
+x_link8 = TxRx(8)*ones(1,length(PL_m8));  
+x_link8 = 10*log10(x_link8/0.1); % vector used for plotting the measured PL values (link 1-4)
+PL_m9 = [120 115.625 117.8125 118.75 120.9375 122.1875 123.125 123.75 120 120]; % measured PL values (link 5-7)
+x_link9 = TxRx(9)*ones(1,length(PL_m9));  
+x_link9 = 10*log10(x_link9/0.1); % vector used for plotting the measured PL values (link 5-7)
+PL_m10 = [125 129.0625 125.9375 126.875 128.125 135 131.875 136.25 136.875 138.125]; % measured PL values (link 2-4)
+x_link10 = TxRx(10)*ones(1,length(PL_m10));  
+x_link10 = 10*log10(x_link10/0.1); % vector used for plotting the measured PL values (link 2-4)
+PL_m11 = [130 130.9375 128.75 127.8125 129.6875 130 130.9375 128.75 127.8125 129.6875]; % measured PL values (link %17-14)
+x_link11 = TxRx(11)*ones(1,length(PL_m11));  
+x_link11 = 10*log10(x_link11/0.1); % vector used for plotting the measured PL values (link 17-14)
+PL_m12 = [122.1875 120.9375 120 122.1875 120.9375 120 120 120 120 120]; % measured PL values (link 7-18)
+x_link12 = TxRx(12)*ones(1,length(PL_m12));  
+x_link12 = 10*log10(x_link12/0.1); % vector used for plotting the measured PL values (link 7-18)
+PL_m13 = [129.6875 129.0625 127.8125 126.875 127.1875 125 125.9375 123.75 125 125]; % measured PL values (link 4-7)
+x_link13 = TxRx(13)*ones(1,length(PL_m13));  
+x_link13 = 10*log10(x_link13/0.1); % vector used for plotting the measured PL values (link 4-7)
+PL_m14 = [129.6875 129.0625 130.9375 131.875 133.125 136.25 136.875 139.0625 129.6875 129.0625]; % measured PL %values (link 17-12)
+x_link14 = TxRx(14)*ones(1,length(PL_m14));  
+x_link14 = 10*log10(x_link14/0.1); % vector used for plotting the measured PL values (link 17-12)
+PL_m15 = [140 136.875 139.0625 149.375 148.125 143.125 142.1875 140.9375 140 140]; % measured PL values (link 12-10)
+x_link15 = TxRx(15)*ones(1,length(PL_m15));  
+x_link15 = 10*log10(x_link15/0.1); % vector used for plotting the measured PL values (link 12-10)
+PL_m16 = [136.25 135 130.9375 129.6875 129.0625 127.8125 136.25 135 135 135]; % measured PL values (link 17-13)
+x_link16 = TxRx(16)*ones(1,length(PL_m16));  
+x_link16 = 10*log10(x_link16/0.1); % vector used for plotting the measured PL values (link 17-13)
+PL_m17 = [133.125 131.875 134.0625 135 136.25 136.875 138.125 135 135 135]; % measured PL values (link 12-14)
+x_link17 = TxRx(17)*ones(1,length(PL_m17));  
+x_link17 = 10*log10(x_link17/0.1); % vector used for plotting the measured PL values (link 12-14)
+PL_m18 = [142.1875 138.125 136.875 135 133.125 131.875 130.9375 129.6875 142.1875 138.125]; % measured PL values %(link 7-19)
+x_link18 = TxRx(18)*ones(1,length(PL_m18));  
+x_link18 = 10*log10(x_link18/0.1); % vector used for plotting the measured PL values (link 7-19)
+PL_m19 = [123.75 122.1875 122.96875 121.09375 120 118.75 123.75 122.1875 122.96875 120]; % measured PL values (link %5-18)
+x_link19 = TxRx(19)*ones(1,length(PL_m19));  
+x_link19 = 10*log10(x_link19/0.1); % vector used for plotting the measured PL values (link 5-18)
+PL_m20 = [120 118.75 117.8125 115.625 114.375 120 118.75 117.8125 115.625 114.375]; % measured PL values (link 4-18)
+x_link20 = TxRx(20)*ones(1,length(PL_m20));  
+x_link20 = 10*log10(x_link20/0.1); % vector used for plotting the measured PL values (link 4-18)
+PL_m21 = [123.75 122.96875 122.1875 123.75 122.96875 122.1875 122.96875 122.1875 122.96875 122.1875]; % measured %PL values (link 5-19)
+x_link21 = TxRx(21)*ones(1,length(PL_m21));  
+x_link21 = 10*log10(x_link21/0.1); % vector used for plotting the measured PL values (link 5-19)
+PL_m22 = [127.8125 126.875 125.9375 125 123.75 127.8125 126.875 125.9375 125 125]; % measured PL values (link 4-19)
+x_link22 = TxRx(22)*ones(1,length(PL_m22));  
+x_link22 = 10*log10(x_link22/0.1); % vector used for plotting the measured PL values (link 4-19)
+PL_m23 = [123.75 125 125 125 125 125 125 125 125 125]; % measured PL values (link 5-8)
+x_link23 = TxRx(23)*ones(1,length(PL_m23));  
+x_link23 = 10*log10(x_link23/0.1); % vector used for plotting the measured PL values (link 5-8)
+PL_m24 = [129.6875 130.9375 131.875 133.125 135 129.6875 130.9375 131.875 133.125 135]; % measured PL values (link 4-%8)
+x_link24 = TxRx(24)*ones(1,length(PL_m24));  
+x_link24 = 10*log10(x_link24/0.1); % vector used for plotting the measured PL values (link 4-8)
+PL_m25 = [125.9375 125 123.75 122.96875 125.9375 125 123.75 122.96875 125 125]; % measured PL values (link 7-9)
+x_link25 = TxRx(25)*ones(1,length(PL_m25));  
+x_link25 = 10*log10(x_link25/0.1); % vector used for plotting the measured PL values (link 7-9)
+PL_m26 = [118.75 117.8125 116.5625 115.625 118.75 117.8125 116.5625 115.625 118.75 117.8125]; % measured PL values %(link 4-9)
+x_link26 = TxRx(26)*ones(1,length(PL_m26));  
+x_link26 = 10*log10(x_link26/0.1); % vector used for plotting the measured PL values (link 4-9)
+PL_m27 = [128.75 127.8125 126.875 125.9375 125 128.75 127.8125 126.875 125.9375 125]; % measured PL values (link 5-9)
+x_link27 = TxRx(27)*ones(1,length(PL_m27));  
+x_link27 = 10*log10(x_link27/0.1); % vector used for plotting the measured PL values (link 5-9)
+PL_m28 = [129.6875 130.9375 131.875 133.125 129.6875 130.9375 131.875 133.125 133.125 133.125]; % measured PL values %(link 12-15)
+x_link28 = TxRx(28)*ones(1,length(PL_m28)); 
+x_link28 = 10*log10(x_link28/0.1); % vector used for plotting the measured PL values (link 12-15)
+PL_m29 = [127.8125 126.875 125.9375 125 123.75 122.96875 125 125 125 125]; % measured PL values (link 17-16)
+x_link29 = TxRx(29)*ones(1,length(PL_m29));  
+x_link29 = 10*log10(x_link29/0.1); % vector used for plotting the measured PL values (link 17-16)
+PL_m30 = [139.0625 138.125 136.25 135 134.0625 130.9375 131.875 133.125 144.0625 146.25]; % measured PL values (link %12-16)
+x_link30 = TxRx(30)*ones(1,length(PL_m30));  
+x_link30 = 10*log10(x_link30/0.1); % vector used for plotting the measured PL values (link 12-16)
+
+
+PL_m = [PL_m1; PL_m2; PL_m3; PL_m4; PL_m5; PL_m6; PL_m7; PL_m8; PL_m9; PL_m10; PL_m11; ...
+PL_m12; PL_m13; PL_m14; PL_m15; PL_m16; PL_m17; PL_m18; PL_m19; PL_m20; PL_m21; PL_m22; ...
+PL_m23; PL_m24; PL_m25; PL_m26; PL_m27; PL_m28; PL_m29; PL_m30];
+
+x_link = [x_link1; x_link2; x_link3; x_link4; x_link5; x_link6; x_link7; x_link8; x_link9; ...
+x_link10; x_link11; x_link12; x_link13; x_link14; x_link15; x_link16; x_link17; x_link18; ...
+x_link19; x_link20; x_link21; x_link22; x_link23; x_link24; x_link25; x_link26; x_link27; ...
+x_link28; x_link29; x_link30]; 
+
+% Input values for Egli model
+hb_e = 2.5*ones(1, 30); 
+hm_e = 2.5*ones(1, 30);
+
+% Input values for ITU-R P.1812-5
+p = 50;  %required time percentage for which the calculated basic transmission loss is not exceeded
+f_ghz = f/1000; %frequency in GHz
+
+passo = [];
+n = 30; %number of points considered in the terrain profile
+a = 0; 
+for a = 1:length(TxRx)
+  passo(a) = TxRx(a)/(n-1); 
+endfor
+
+d1 = [0:passo(1):TxRx(1)]; %distance vector from the profile point to Tx in ‘km’ (link 2-1)
+d2 = [0:passo(2):TxRx(2)]; %distance vector from the profile point to Tx in ‘km’ (link 1-3)
+d3 = [0:passo(3):TxRx(3)]; %distance vector from the profile point to Tx in ‘km’ (link 2-3)
+d4 = [0:passo(4):TxRx(4)]; %distance vector from the profile point to Tx in ‘km’ (link 3-4)
+d5 = [0:passo(5):TxRx(5)]; %distance vector from the profile point to Tx in ‘km’ (link 12-13)
+d6 = [0:passo(6):TxRx(6)]; %distance vector from the profile point to Tx in ‘km’ (link 17-11)
+d7 = [0:passo(7):TxRx(7)]; %distance vector from the profile point to Tx in ‘km’ (link 12-11)
+d8 = [0:passo(8):TxRx(8)]; %distance vector from the profile point to Tx in ‘km’ (link 1-4)
+d9 = [0:passo(9):TxRx(9)]; %distance vector from the profile point to Tx in ‘km’ (link 5-7)
+d10 = [0:passo(10):TxRx(10)]; %distance vector from the profile point to Tx in ‘km’ (link 2-4)
+d11 = [0:passo(11):TxRx(11)]; %distance vector from the profile point to Tx in ‘km’ (link 17-14)
+d12 = [0:passo(12):TxRx(12)]; %distance vector from the profile point to Tx in ‘km’ (link 7-18)
+d13 = [0:passo(13):TxRx(13)]; %distance vector from the profile point to Tx in ‘km’ (link 4-7)
+d14 = [0:passo(14):TxRx(14)]; %distance vector from the profile point to Tx in ‘km’ (link 17-12)
+d15 = [0:passo(15):TxRx(15)]; %distance vector from the profile point to Tx in ‘km’ (link 12-10)
+d16 = [0:passo(16):TxRx(16)]; %distance vector from the profile point to Tx in ‘km’ (link 17-13)
+d17 = [0:passo(17):TxRx(17)]; %distance vector from the profile point to Tx in ‘km’ (link 12-14)
+d18 = [0:passo(18):TxRx(18)]; %distance vector from the profile point to Tx in ‘km’ (link 7-19)
+d19 = [0:passo(19):TxRx(19)]; %distance vector from the profile point to Tx in ‘km’ (link 5-18)
+d20 = [0:passo(20):TxRx(20)]; %distance vector from the profile point to Tx in ‘km’ (link 4-18)
+d21 = [0:passo(21):TxRx(21)]; %distance vector from the profile point to Tx in ‘km’ (link 5-19)
+d22 = [0:passo(22):TxRx(22)]; %distance vector from the profile point to Tx in ‘km’ (link 4-19)
+d23 = [0:passo(23):TxRx(23)]; %distance vector from the profile point to Tx in ‘km’ (link 5-8)
+d24 = [0:passo(24):TxRx(24)]; %distance vector from the profile point to Tx in ‘km’ (link 4-8)
+d25 = [0:passo(25):TxRx(25)]; %distance vector from the profile point to Tx in ‘km’ (link 7-9)
+d26 = [0:passo(26):TxRx(26)]; %distance vector from the profile point to Tx in ‘km’ (link 4-9)
+d27 = [0:passo(27):TxRx(27)]; %distance vector from the profile point to Tx in ‘km’ (link 5-9)
+d28 = [0:passo(28):TxRx(28)]; %distance vector from the profile point to Tx in ‘km’ (link 12-15)
+d29 = [0:passo(29):TxRx(29)]; %distance vector from the profile point to Tx in ‘km’ (link 17-16)
+d30 = [0:passo(30):TxRx(30)]; %distance vector from the profile point to Tx in ‘km’ (link 12-16)
+
+d = [d1; d2; d3; d4; d5; d6; d7; d8; d9; d10; d11; d12; d13; d14; d15; d16; d17; ...
+d18; d19; d20; d21; d22; d23; d24; d25; d26; d27; d28; d29; d30];
+
+h1 = [528 528 528 528 529 529 529 529 529 529 529 529 530 530 530 530 530 530 ...
+530 530 530 531 531 531 531 531 531 531 531 531]; %height of each profile point between Tx and Rx, related to sea level, in %‘m’ (link 2-1)
+h2 = [531 531 531 531 531 531 531 531 531 531 531 531 530 530 530 530 530 530 ...
+530 530 530 530 530 530 530 531 531 531 530 530]; %height of each profile point between Tx and Rx, related to sea level, in %'m' (link 1-3)
+h3 = [528 528 528 528 529 529 529 529 529 529 529 529 529 529 529 529 529 529 ...
+529 529 530 530 530 530 530 530 530 530 530 530]; %height of each profile point between Tx and Rx, related to sea level, in '%m' (link 2-3)
+h4 = [530 531 531 531 532 532 533 533 534 534 534 535 535 536 536 537 537 537 ...
+538 538 538 539 539 539 539 539 539 539 540 540]; %height of each profile point between Tx and Rx, related to sea level, in %'m' (link 3-4)
+h5 = [585 586 586 587 588 589 589 590 591 591 592 592 593 593 593 593 593 593 ...
+593 593 594 594 594 594 595 595 596 596 596 597]; %height of each profile point between Tx and Rx, related to sea level, in %'m' (link 12-13)
+h6 = [556 556 557 557 558 558 558 559 560 560 561 562 562 563 564 564 565 565 ...
+566 566 567 568 568 569 569 570 570 571 571 572]; %height of each profile point between Tx and Rx, related to sea level, in %'m' (link 17-11)
+h7 = [585 585 585 584 584 583 583 582 582 582 581 581 580 580 579 579 578 578 ...
+577 576 576 575 575 575 574 574 573 572 572 572]; %height of each profile point between Tx and Rx, related to sea level, in %'m' (link 12-11)
+h8 = [531 531 531 531 531 532 532 533 533 534 534 535 535 536 536 536 537 537 ...
+538 538 538 538 539 539 539 539 539 539 539 540]; %height of each profile point between Tx and Rx, related to sea level, in %'m' (link 1-4)
+h9 = [548 547 547 547 547 547 547 547 547 547 547 548 548 548 548 548 548 548 ...
+548 548 548 548 549 549 549 549 550 550 550 550]; %height of each profile point between Tx and Rx, related to sea level, in %'m' (link 5-7)
+h10 = [528 529 529 530 530 530 530 531 531 531 532 532 533 534 534 535 535 536 ...
+537 537 537 538 538 538 539 539 539 539 539 540]; %height of each profile point between Tx and Rx, related to sea level, in %'m' (link 2-4)
+h11 = [556 556 556 555 556 556 556 555 555 554 553 553 552 551 551 550 548 546 ...
+545 544 543 543 544 544 545 546 547 547 548 550]; %height of each profile point between Tx and Rx, related to sea level, in %'m' (link 17-14)
+h12 = [550 550 551 551 551 551 550 550 550 550 550 550 550 551 551 552 552 552 ...
+553 553 554 554 555 554 554 554 544 554 555 555]; %height of each profile point between Tx and Rx, related to sea level, in %'m' (link 7-18)
+h13 = [540 541 542 542 542 542 541 541 541 541 542 542 543 543 543 544 544 545 ...
+545 544 544 544 545 546 548 548 549 549 550 550]; %height of each profile point between Tx and Rx, related to sea level, in %'m' (link 4-7)
+h14 = [556 557 558 558 560 561 562 564 565 566 567 568 569 570 571 572 573 574 ...
+575 576 577 578 579 580 581 582 583 583 584 585]; %height of each profile point between Tx and Rx, related to sea level, in %'m' (link 17-12)
+h15 = [585 584 583 582 581 580 579 577 576 574 573 572 570 568 567 565 564 562 ...
+561 560 558 557 556 555 553 552 551 550 547 546]; %height of each profile point between Tx and Rx, related to sea level, in %'m' (link 12-10)
+h16 = [556 557 558 559 561 562 564 566 567 569 570 571 572 574 575 577 578 580 ...
+581 582 584 585 587 588 590 591 592 593 594 597]; %height of each profile point between Tx and Rx, related to sea level, in %'m' (link 17-13)
+h17 = [585 584 583 582 580 579 577 574 572 570 569 568 567 564 561 559 557 555 ...
+554 553 551 550 549 549 550 550 550 550 550 550]; %height of each profile point between Tx and Rx, related to sea level, in %'m' (link 12-14)
+h18 = [550 550 550 550 549 548 548 549 549 550 551 551 551 551 551 551 551 551 ...
+551 551 551 550 550 550 550 551 551 551 550 550]; %height of each profile point between Tx and Rx, related to sea level, in %'m' (link 7-19)
+h19 = [548 546 546 545 545 545 545 544 543 543 544 545 544 543 543 544 545 546 ...
+547 548 549 550 550 551 551 552 552 553 554 555]; %height of each profile point between Tx and Rx, related to sea level, in %'m' (link 5-18)
+h20 = [540 540 539 539 539 539 539 539 538 537 537 538 539 539 538 538 539 541 ...
+542 543 544 545 547 548 549 550 551 552 553 554]; %height of each profile point between Tx and Rx, related to sea level, in %'m' (link 4-18)
+h21 = [548 546 545 545 545 544 544 543 545 545 544 542 541 541 542 543 543 545 ...
+545 546 546 547 547 547 548 548 549 550 550 550]; %height of each profile point between Tx and Rx, related to sea level, in %'m' (link 5-19)
+h22 = [540 539 538 538 538 538 537 536 535 534 532 529 526 525 528 532 536 538 ...
+540 542 543 543 544 544 545 545 547 548 549 550]; %height of each profile point between Tx and Rx, related to sea level, in %'m' (link 4-19)
+h23 = [548 546 545 545 545 544 543 543 545 544 543 543 544 545 547 548 550 550 ...
+550 551 552 553 554 556 556 556 557 558 559 560]; %height of each profile point between Tx and Rx, related to sea level, in %'m' (link 5-8)
+h24 = [540 540 539 539 539 538 538 537 536 535 534 533 534 537 540 542 543 545 ...
+546 547 548 550 550 551 553 554 556 558 559 560]; %height of each profile point between Tx and Rx, related to sea level, in %'m' (link 4-8)
+h25 = [550 550 550 548 548 548 549 550 550 550 549 550 549 549 549 548 548 548 ...
+547 547 547 547 547 547 546 546 547 547 548 550]; %height of each profile point between Tx and Rx, related to sea level, in %'m' (link 7-9)
+h26 = [540 539 537 537 537 535 533 530 527 524 521 522 526 530 532 533 534 536 ...
+537 537 538 539 540 541 541 542 544 545 547 550]; %height of each profile point between Tx and Rx, related to sea level, in %'m' (link 4-9)
+h27 = [548 545 545 544 543 542 543 545 541 538 537 538 539 541 542 542 542 542 ...
+541 542 542 544 544 544 544 544 545 546 547 550]; %height of each profile point between Tx and Rx, related to sea level, in %'m' (link 5-9)
+h28 = [585 583 581 576 571 567 563 563 561 559 559 560 565 568 568 566 567 568 ...
+569 571 573 574 573 574 575 574 573 574 576 577]; %height of each profile point between Tx and Rx, related to sea level, in %'m' (link 12-15)
+h29 = [556 555 554 551 548 543 542 544 547 548 549 552 553 558 560 561 563 564 ...
+566 567 567 565 565 572 578 582 588 593 598 604]; %height of each profile point between Tx and Rx, related to sea level, in %'m' (link 17-16)
+h30 = [585 582 575 567 565 563 559 562 568 568 568 570 573 575 575 576 575 577 ...
+578 583 580 576 572 571 578 585 589 595 598 605]; %height of each profile point between Tx and Rx, related to sea level, in %'m' (link 12-16)
+
+
+h = [h1; h2; h3; h4; h5; h6; h7; h8; h9; h10; h11; h12; h13; h14; h15; h16; h17; ...
+h18; h19; h20; h21; h22; h23; h24; h25; h26; h27; h28; h29; h30];
+
+
+R1 = [15 0*ones(1,length(d1)-2) 10];  %representative clutter height for each profile point in ‘m’ (link 2-1)
+R2 = [10 0*ones(1,length(d2)-2) 10];  %representative clutter height for each profile point in ‘m’ (link 1-3)
+R3 = [15 0*ones(1,length(d3)-2) 10];  %representative clutter height for each profile point in ‘m’ (link 2-3) 
+R4 = [10 0*ones(1,length(d4)-2) 15];  %representative clutter height for each profile point in ‘m’ (link 3-4)
+R5 = [10 0*ones(1,length(d5)-2) 10];  %representative clutter height for each profile point in ‘m’ (link 12-13)
+R6 = [10 0*ones(1,length(d6)-2) 10];  %representative clutter height for each profile point in ‘m’ (link 17-11)
+R7 = [10 0*ones(1,length(d7)-2) 10];  %representative clutter height for each profile point in ‘m’ (link 12-11)
+R8 = [10 0*ones(1,length(d8)-2) 15];  %representative clutter height for each profile point in ‘m’ (link 1-4)
+R9 = [10 0*ones(1,length(d9)-2) 10];  %representative clutter height for each profile point in ‘m’ (link 5-7)
+R10 = [15 0*ones(1,length(d10)-2) 15];  %representative clutter height for each profile point in ‘m’ (link 2-4)
+R11 = [10 0*ones(1,length(d11)-2) 10];  % representative clutter height for each profile point %in ‘m’ (link 17-14)
+R12 = [10 0*ones(1,length(d12)-2) 10];  %representative clutter height for each profile point in ‘m’ (link 7-18)
+R13 = [15 0*ones(1,length(d13)-2) 10];  %representative clutter height for each profile point in ‘m’ (link 4-7)
+R14 = [10 0*ones(1,length(d14)-2) 10];  %representative clutter height for each profile point in ‘m’ (link 17-12)
+R15 = [10 0*ones(1,length(d15)-2) 10];  %representative clutter height for each profile point in ‘m’ (link 12-10)
+R16 = [10 0*ones(1,length(d16)-2) 10];  %representative clutter height for each profile point in ‘m’ (link 17-13)
+R17 = [10 0*ones(1,length(d17)-2) 10];  % representative clutter height for each profile point in ‘m’ (link 12-14)
+R18 = [10 0*ones(1,length(d18)-2) 10];  %representative clutter height for each profile point in ‘m’ (link 7-19)
+R19 = [10 0*ones(1,length(d19)-2) 10];  %representative clutter height for each profile point in ‘m’ (link 5-18)
+R20 = [15 0*ones(1,length(d20)-2) 10];  %representative clutter height for each profile point in ‘m’ (link 4-18)
+R21 = [10 0*ones(1,length(d21)-2) 10];  % representative clutter height for each profile point in ‘m’ (link 5-19)
+R22 = [15 0*ones(1,length(d22)-2) 10];  %representative clutter height for each profile point in ‘m’ (link 4-19)
+R23 = [10 0*ones(1,length(d23)-2) 10];  %representative clutter height for each profile point in ‘m’ (link 5-8)
+R24 = [15 0*ones(1,length(d24)-2) 10];  %representative clutter height for each profile point in ‘m’ (link 4-8)
+R25 = [10 0*ones(1,length(d25)-2) 10];  %representative clutter height for each profile point in ‘m’ (link 7-9)
+R26 = [15 0*ones(1,length(d26)-2) 10];  %representative clutter height for each profile point in ‘m’ (link %4-9)
+R27 = [10 0*ones(1,length(d27)-2) 10];  %representative clutter height for each profile point in ‘m’ (link 5-9)
+R28 = [10 0*ones(1,length(d28)-2) 10];  %representative clutter height for each profile point in ‘m’ %(link 12-15)
+R29 = [10 0*ones(1,length(d29)-2) 10];  %representative clutter height for each %profile point in ‘m’ (link 17-16)
+R30 = [10 0*ones(1,length(d30)-2) 10];  %representative clutter height %for each profile point in ‘m’ (link 12-16)
+
+R = [R1; R2; R3; R4; R5; R6; R7; R8; R9; R10; R11; R12; R13; R14; R15; R16; R17; ...
+R18; R19; R20; R21; R22; R23; R24; R25; R26; R27; R28; R29; R30];
+
+Ct1 = [4 2*ones(1,length(d1)-1)]; %clutter type for each profile point: Water/sea (1), 
+ %Open/rural (2), Suburban (3), Urban/trees/forest (4), Dense urban (5). (Link 2-1)
+Ct2 = 2*ones(1,length(d2)); %clutter type for each profile point: Water/sea (1), 
+ %Open/rural (2), Suburban (3), Urban/trees/forest (4), Dense urban (5). (Link 1-3)
+Ct3 = [4 2*ones(1,length(d3)-1)]; %clutter type for each profile point: Water/sea (1), 
+ %Open/rural (2), Suburban (3), Urban/trees/forest (4), Dense urban (5). (Link 2-3)
+Ct4 = [2*ones(1,length(d4)-1) 4]; %clutter type for each profile point: Water/sea (1), 
+ %Open/rural (2), Suburban (3), Urban/trees/forest (4), Dense urban (5). (Link 3-4)
+Ct5 = 2*ones(1,length(d5)); %clutter type for each profile point: Water/sea (1), 
+ %Open/rural (2), Suburban (3), Urban/trees/forest (4), Dense urban (5). (Link 12-13)
+Ct6 = 2*ones(1,length(d6)); %clutter type for each profile point: Water/sea (1), 
+ %Open/rural (2), Suburban (3), Urban/trees/forest (4), Dense urban (5). (Link 17-11)
+Ct7 = 2*ones(1,length(d7)); %clutter type for each profile point: Water/sea (1), 
+ %Open/rural (2), Suburban (3), Urban/trees/forest (4), Dense urban (5). (Link 12-11)
+Ct8 = [2*ones(1,length(d8)-1) 4]; %clutter type for each profile point: Water/sea (1), 
+ %Open/rural (2), Suburban (3), Urban/trees/forest (4), Dense urban (5). (Link 1-4)
+Ct9 = 2*ones(1,length(d9)); %clutter type for each profile point: Water/sea (1), 
+ %Open/rural (2), Suburban (3), Urban/trees/forest (4), Dense urban (5). (Link 5-7)
+Ct10 = [4 2*ones(1,length(d10)-2) 4]; %clutter type for each profile point: Water/sea (1), 
+ %Open/rural (2), Suburban (3), Urban/trees/forest (4), Dense urban (5). (Link 2-4)
+Ct11 = 2*ones(1,length(d11)); %clutter type for each profile point: 
+%Water/sea (1), Open/rural (2), Suburban (3), Urban/trees/forest (4), Dense urban (5). (Link 17-14)
+Ct12 = 2*ones(1,length(d12)); %clutter type for each profile point: Water/sea (1), 
+ %Open/rural (2), Suburban (3), Urban/trees/forest (4), Dense urban (5). (Link 7-18)
+Ct13 = [4 2*ones(1,length(d13)-1)]; %clutter type for each profile point: Water/sea (1), 
+ %Open/rural (2), Suburban (3), Urban/trees/forest (4), Dense urban (5). (Link 4-7)
+Ct14 = 2*ones(1,length(d14)); %clutter type for each profile point: Water/sea (1), 
+ %Open/rural (2), Suburban (3), Urban/trees/forest (4), Dense urban (5). (Link 17-12)
+Ct15 = 2*ones(1,length(d15)); %clutter type for each profile point: 
+%Water/sea (1), Open/rural (2), Suburban (3), Urban/trees/forest (4), Dense urban (5). (Link 12-10)
+Ct16 = 2*ones(1,length(d16)); %clutter type for each profile point: Water/sea (1), 
+ %Open/rural (2), Suburban (3), Urban/trees/forest (4), Dense urban (5). (Link 17-13)
+Ct17 = [2*ones(1,length(d17)-11) 4*ones(1,6) 2*ones(1,5)]; %clutter type for each profile point: 
+%Water/sea (1), Open/rural (2), Suburban (3), Urban/trees/forest (4), Dense urban (5). (Link 12-14)
+Ct18 = 2*ones(1,length(d18)); %clutter type for each profile point: Water/sea (1), 
+ %Open/rural (2), Suburban (3), Urban/trees/forest (4), Dense urban (5). (Link 7-19)
+Ct19 = 2*ones(1,length(d19)); %clutter type for each profile point: Water/sea (1), 
+ %Open/rural (2), Suburban (3), Urban/trees/forest (4), Dense urban (5). (Link 5-18)
+Ct20 = [4 2*ones(1,length(d20)-1)]; %clutter type for each profile point: 
+%Water/sea (1), Open/rural (2), Suburban (3), Urban/trees/forest (4), Dense urban (5). (Link 4-18)
+Ct21 = 2*ones(1,length(d21)); %clutter type for each profile point: 
+%Water/sea (1), Open/rural (2), Suburban (3), Urban/trees/forest (4), Dense urban (5). (Link 5-19)
+Ct22 = [4 2*ones(1,length(d22)-1)]; %clutter type for each profile point: Water/sea (1), 
+ %Open/rural (2), Suburban (3), Urban/trees/forest (4), Dense urban (5). (Link 4-19)
+Ct23 = 2*ones(1,length(d23)); %clutter type for each profile point: Water/sea (1), 
+ %Open/rural (2), Suburban (3), Urban/trees/forest (4), Dense urban (5). (Link 5-8)
+Ct24 = [4 2*ones(1,length(d24)-1)]; %clutter type for each profile point: 
+%Water/sea (1), Open/rural (2), Suburban (3), Urban/trees/forest (4), Dense urban (5). (Link 4-8)
+Ct25 = 2*ones(1,length(d25)); %clutter type for each profile point: Water/sea (1), 
+ %Open/rural (2), Suburban (3), Urban/trees/forest (4), Dense urban (5). (Link 7-9)
+Ct26 = [4 2*ones(1,length(d26)-1)]; %clutter type for each profile point: 
+%Water/sea (1), Open/rural (2), Suburban (3), Urban/trees/forest (4), Dense urban (5). (Link 4-9) 
+Ct27 = 2*ones(1,length(d27)); %clutter type for each profile point: 
+%Water/sea (1), Open/rural (2), Suburban (3), Urban/trees/forest (4), Dense urban (5). (Link 5-9)
+Ct28 = 2*ones(1,length(d28)); %clutter type for each profile point: 
+%Water/sea (1), Open/rural (2), Suburban (3), Urban/trees/forest (4), Dense urban (5). (Link 12-15)
+Ct29 = 2*ones(1,length(d29)); %clutter type for each profile point: Water/sea (1), %Open/rural (2), Suburban (3), Urban/trees/forest (4), Dense urban (5). (Link 17-16)
+Ct30 = 2*ones(1,length(d30)); %clutter type for each profile point: %Water/sea (1), Open/rural (2), Suburban (3), Urban/trees/forest (4), Dense urban (5). (Link 12-16)
+ 
+ 
+Ct = [Ct1; Ct2; Ct3; Ct4; Ct5; Ct6; Ct7; Ct8; Ct9; Ct10; Ct11; Ct12; Ct13; Ct14; ...
+Ct15; Ct16; Ct17; Ct18; Ct19; Ct20; Ct21; Ct22; Ct23; Ct24; Ct25; Ct26; Ct27; Ct28; Ct29; Ct30]; 
+ 
+zone1 = 4*ones(1,length(d1)); % 'radio-climatic zone types': Inland (4), 
+ %Coastal land (3), or Sea (1). (Link 2-1)
+zone2 = 4*ones(1,length(d2)); % 'radio-climatic zone types': Inland (4), 
+ %Coastal land (3), or Sea (1). (Link 1-3)
+zone3 = 4*ones(1,length(d3)); % 'radio-climatic zone types': Inland (4), 
+ %Coastal land (3), or Sea (1). (Link 2-3)
+zone4 = 4*ones(1,length(d4)); % 'radio-climatic zone types': Inland (4), 
+ %Coastal land (3), or Sea (1). (Link 3-4)
+zone5 = 4*ones(1,length(d5)); % 'radio-climatic zone types': Inland (4), 
+ %Coastal land (3), or Sea (1). (Link 12-13)
+zone6 = 4*ones(1,length(d6)); % 'radio-climatic zone types': Inland (4), 
+ %Coastal land (3), or Sea (1). (Link 17-11)
+zone7 = 4*ones(1,length(d7)); % 'radio-climatic zone types': Inland (4), 
+ %Coastal land (3), or Sea (1). (Link 12-11)
+zone8 = 4*ones(1,length(d8)); % 'radio-climatic zone types': Inland (4), 
+ %Coastal land (3), or Sea (1). (Link 1-4)
+zone9 = 4*ones(1,length(d9)); % 'radio-climatic zone types': Inland (4), 
+ %Coastal land (3), or Sea (1). (Link 5-7)
+zone10 = 4*ones(1,length(d10)); % 'radio-climatic zone types': Inland (4), 
+ %Coastal land (3), or Sea (1). (Link 2-4)
+zone11 = 4*ones(1,length(d11)); % 'radio-climatic zone types': Inland (4), 
+ %Coastal land (3), or Sea (1). (Link 17-14)
+zone12 = 4*ones(1,length(d12)); % 'radio-climatic zone types': Inland (4), 
+ %Coastal land (3), or Sea (1). (Link 7-18)
+zone13 = 4*ones(1,length(d13)); % 'radio-climatic zone types': Inland (4), 
+ %Coastal land (3), or Sea (1). (Link 4-7)
+zone14 = 4*ones(1,length(d14)); % 'radio-climatic zone types': Inland (4), 
+ %Coastal land (3), or Sea (1). (Link 17-12)
+zone15 = 4*ones(1,length(d15)); % 'radio-climatic zone types': Inland (4), 
+ %Coastal land (3), or Sea (1). (Link 12-10)
+zone16 = 4*ones(1,length(d16)); % 'radio-climatic zone types': Inland (4), 
+ %Coastal land (3), or Sea (1). (Link 17-13)
+zone17 = 4*ones(1,length(d17)); % 'radio-climatic zone types': Inland (4), 
+ %Coastal land (3), or Sea (1). (Link 12-14)
+zone18 = 4*ones(1,length(d18)); % 'radio-climatic zone types': Inland (4), 
+ %Coastal land (3), or Sea (1). (Link 7-19)
+zone19 = 4*ones(1,length(d19)); % 'radio-climatic zone types': Inland (4), 
+ %Coastal land (3), or Sea (1). (Link 5-18)
+zone20 = 4*ones(1,length(d20)); % 'radio-climatic zone types': Inland (4), 
+ %Coastal land (3), or Sea (1). (Link 4-18)
+zone21 = 4*ones(1,length(d21)); % 'radio-climatic zone types': Inland (4), 
+ %Coastal land (3), or Sea (1). (Link 5-19)
+zone22 = 4*ones(1,length(d22)); % 'radio-climatic zone types': Inland (4), 
+ %Coastal land (3), or Sea (1). (Link 4-19)
+zone23 = 4*ones(1,length(d23)); % 'radio-climatic zone types': Inland (4), 
+ %Coastal land (3), or Sea (1). (Link 5-8)
+zone24 = 4*ones(1,length(d24)); % 'radio-climatic zone types': Inland (4), 
+ %Coastal land (3), or Sea (1). (Link 4-8)
+zone25 = 4*ones(1,length(d25)); % 'radio-climatic zone types': Inland (4), 
+ %Coastal land (3), or Sea (1). (Link 7-9)
+zone26 = 4*ones(1,length(d26)); % 'radio-climatic zone types': Inland (4), 
+ %Coastal land (3), or Sea (1). (Link 4-9)
+zone27 = 4*ones(1,length(d27)); % 'radio-climatic zone types': Inland (4), 
+ %Coastal land (3), or Sea (1). (Link 5-9)
+zone28 = 4*ones(1,length(d28)); % 'radio-climatic zone types': Inland (4), 
+ %Coastal land (3), or Sea (1). (Link 12-15)
+zone29 = 4*ones(1,length(d29)); % 'radio-climatic zone types': Inland (4), 
+ %Coastal land (3), or Sea (1). (Link 17-16)
+zone30 = 4*ones(1,length(d30)); % 'radio-climatic zone types': Inland (4), 
+ %Coastal land (3), or Sea (1). (Link 12-16)
+ 
+zone = [zone1; zone2; zone3; zone4; zone5; zone6; zone7; zone8; zone9; zone10; ... 
+zone11; zone12; zone13; zone14; zone15; zone16; zone17; zone18; zone19; zone20; ... 
+zone21; zone22; zone23; zone24; zone25; zone26; zone27; zone28; zone29; zone30];
+ 
+htg = 2.5; % Tx height, related to the ground 
+hrg = 2.5; % Rx height, related to the ground
+
+phi_1 = -18.471614; %latitude point 1
+lam_1 = -49.019156; %longitude point 1
+phi_2 = -18.471906; %latitude point 2
+lam_2 = -49.020203; %longitude point 2
+phi_3 = -18.472800; %latitude point 3
+lam_3 = -49.017964; %longitude point 3
+phi_4 = -18.472444; %latitude point 4
+lam_4 = -49.013800; %longitude point 4
+phi_5 = -18.474361; %latitude point 5
+lam_5 = -49.008839; %longitude point 5
+phi_6 = -18.475028; %latitude point 6
+lam_6 = -49.007594; %longitude point 6
+phi_7 = -18.471458; %latitude point 7
+lam_7 = -49.003517; %longitude point 7
+phi_8 = -18.459161; %latitude point 8
+lam_8 = -49.001069; %longitude point 8
+phi_9 = -18.453383; %latitude point 9
+lam_9 = -49.006558; %longitude point 9
+phi_10 = -18.485211; %latitude point 10
+lam_10 = -49.008033; %longitude point 10
+phi_11 = -18.484289; %latitude point 11
+lam_11 = -49.001303; %longitude point 11
+phi_12 = -18.488128; %latitude point 12
+lam_12 = -48.997839; %longitude point 12
+phi_13 = -18.485328; %latitude point 13
+lam_13 = -48.994028; %longitude point 13
+phi_14 = -18.487733; %latitude point 14
+lam_14 = -49.010156; %longitude point 14
+phi_15 = -18.496831; %latitude point 15
+lam_15 = -49.018158; %longitude point 15
+phi_16 = -18.502800; %latitude point 16
+lam_16 = -49.029856; %longitude point 16
+phi_17 = -18.481031; %latitude point 17
+lam_17 = -49.005242; %longitude point 17
+phi_18 = -18.463239; %latitude point 18
+lam_18 = -49.002758; %longitude point 18
+phi_19 = -18.459100; %latitude point 19
+lam_19 = -49.004461; %longitude point 19
+
+phi_t = [phi_2; phi_1; phi_2; phi_3; phi_12; phi_17; phi_12; phi_1; phi_5; phi_2; ...
+ phi_17; phi_7; phi_4; phi_17; phi_12; phi_17; phi_12; phi_7; phi_5; phi_4; phi_5; ...
+ phi_4; phi_5; phi_4; phi_7; phi_4; phi_5; phi_12; phi_17; phi_12];
+ 
+lam_t = [lam_2; lam_1; lam_2; lam_3; lam_12; lam_17; lam_12; lam_1; lam_5; lam_2; ...
+lam_17; lam_7; lam_4; lam_17; lam_12; lam_17; lam_12; lam_7; lam_5; lam_4; lam_5; ...
+lam_4; lam_5; lam_4; lam_7; lam_4; lam_5; lam_12; lam_17; lam_12];
+
+phi_r = [phi_1; phi_3; phi_3; phi_4; phi_13; phi_11; phi_11; phi_4; phi_7; phi_4; ...
+phi_14; phi_18; phi_7; phi_12; phi_10; phi_13; phi_14; phi_19; phi_18; phi_18; ...
+phi_19; phi_19; phi_8; phi_8; phi_9; phi_9; phi_9; phi_15; phi_16; phi_16];
+
+lam_r = [lam_1; lam_3; lam_3; lam_4; lam_13; lam_11; lam_11; lam_4; lam_7; lam_4; ...
+lam_14; lam_18; lam_7; lam_12; lam_10; lam_13; lam_14; lam_19; lam_18; lam_18; ...
+lam_19; lam_19; lam_8; lam_8; lam_9; lam_9; lam_9; lam_15; lam_17; lam_16];
+
+pol = 1; %polarization type: (1) horizontal, (2) vertical 
+%-------------------------------------------------------------------------------
+
+%Free Space Path Loss model (FSPL)
+L_fsl = 32.4 + 20*log10(f) + 20*log10(TxRx);
+scatter(TxRx_log,L_fsl,'g',"filled"); hold on; 
+
+
+%Egli model (40MHz < f < 1GHz, d <= 60km) Reference: Propagation Loss Prediction: A Comparative Study with
+%application to the mobile radio channel (Delisle, 1985)
+k = 0;
+for k = 1:length(TxRx)
+  L1_e(k) = 20*log10(f) + 40*log10(TxRx(k)) - 20*log10(hb_e(k)); 
+
+  if hm_e(k) <= 10
+    L2_e(k) = 76.3 - 10*log10(hm_e(k));
+  elseif hm_e(k) > 10
+    L2_e(k) = 85.9 - 20*log10(hm_e(k));
+    
+  endif
+endfor
+L_e = L1_e + L2_e;  %PL final value by using Egli model
+scatter(TxRx_log,L_e,'b',"filled"); hold on; 
+
+% ITU-R P.1812-5 model
+Lb = [];
+m = 0; 
+j = 1;
+
+for m = 1:length(TxRx)  
+  Lb(j) = tl_p1812(f_ghz, p, d(m,:), h(m,:), R(m,:), Ct(m,:), zone(m,:), ...
+  htg, hrg, phi_t(m,:), phi_r(m,:), lam_t(m,:), lam_r(m,:), pol); 
+  j = j + 1; 
+endfor
+
+scatter(TxRx_log, Lb, 'r', "filled"); hold on; 
+
+
+%-----PLOT THE PREDICTED PL WITH THE MEASURED PL SAMPLES--------
+i = 0;
+for i = 1:length(TxRx)
+    scatter(x_link(i,:), PL_m(i,:), 'c'); hold on; grid minor on 
+endfor
+%-------------------------------------------------------------------------------
+
+xlabel('distance 10log[Tx-Rx(km)/0.1]'); 
+ylabel('Path Loss (dB)');
+title('C O M P A R I S O N  O F  P R O P A G A T I O N  M O D E L S');
+legend('FSPL', 'Egli', 'P.1812', 'Measurement Data');
+
+%-------------PLOT THE PREDICTED PL WITH THE MEAN PL VALUES----------------
+figure
+a = 0;
+PL_media = []; 
+for a = 1:length(TxRx)
+    PL_media(a) = mean(PL_m(a,:));  
+endfor
+scatter(TxRx_log,L_fsl,'g',"filled"); hold on;
+scatter(TxRx_log,L_e,'b',"filled"); hold on; 
+scatter(TxRx_log,Lb,'r',"filled"); hold on;
+scatter(TxRx_log,PL_media,'x'); grid minor on;
+
+xlabel('distance 10log[Tx-Rx(km)/0.1]'); 
+ylabel('Path Loss (dB)');
+title('C O M P A R I S O N  O F  P R O P A G A T I O N  M O D E L S');
+legend('FSPL', 'Egli', 'P.1812', 'Mean Values');
+
+%------CALCULATES THE ABSOLUTE ERROR BETWEEN PREDICTED PL AND MEAN PL VALUES ---------
+Dif_p1812 = abs(PL_media - Lb)
+Dif_Egli = abs(PL_media - L_e)
+Dif_FSPL = abs(PL_media - L_fsl)
