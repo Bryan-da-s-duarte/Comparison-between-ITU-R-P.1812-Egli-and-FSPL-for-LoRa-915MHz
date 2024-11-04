@@ -7,8 +7,9 @@ clc, clear all, format short
 
 %DATABASE 1 REFERENCE: H. O. Bueno, “Otimização da Seleção de Parâmetros de Transmissão de Rede LORA Mesh de Gateway Single Channel em Ambientes Rurais (in Portuguese),” Master’s thesis, Universidade Federal de Uberlândia, Uberlândia, Brazil, 2021. 
 
-%ADOPTED EXTRACTION METHOD: measurement PL data were obtained by analyzing the PL graphic of the reference. The datasets were mapped and related to each link, and them, horizontal lines were drawn in the graphic for known PL values, obtained from successive arithmetic mean calculations. Once a PL sample was detected between two horizontal lines, a new arithmetic mean calculation was made, using those known PL values. For the result of the calculation, a new horizontal line was drawn. The process continued until a new horizontal line passed through the PL sample. 
-Other input values, such as terrain profile, representative clutter height, distance vector, latitude, longitude, clutter type for each profile point, radio-climatic zones, were obtained by mapping the links in Google Earth. 
+%ADOPTED EXTRACTION METHOD: measurement PL data were obtained by analyzing the PL graphic of the reference. The datasets were mapped and related to each link, and them, horizontal lines were drawn in the graphic for known PL values, 
+%obtained from successive arithmetic mean calculations. Once a PL sample was detected between two horizontal lines, a new arithmetic mean calculation was made, using those known PL values. For the result of the calculation, a new horizontal line was drawn. The process continued until a new horizontal line passed through the PL sample. 
+%Other input values, such as terrain profile, representative clutter height, distance vector, latitude, longitude, clutter type for each profile point, radio-climatic zones, were obtained by mapping the links in Google Earth. 
 
 Nomenclature for the links: A-B, where ‘A’ and ‘B’ are the terminals of the link. 
 %-------INPUT DATA--------------------------------------------------------
