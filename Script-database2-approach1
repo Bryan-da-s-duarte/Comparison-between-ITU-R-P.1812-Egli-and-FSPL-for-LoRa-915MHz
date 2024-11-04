@@ -1,0 +1,173 @@
+clc, clear all, format short
+
+%AUTHORS: BRYAN DA SILVA DUARTE and MAURICIO HENRIQUE COSTA DIAS
+%
+%THIS SCRIPT COMPARES THE PREDICTED PATH LOSS (PL) FOR DIFFERENT LINKS IN THE SAME CHANNEL. 
+%PROPAGATION MODELS: EGLI, FREE SPACE PATH LOSS (FSPL), ITU-R P.1812-5 APPROACH 1
+
+%DATABASE 2 REFERENCE: F. M. Ortiz, T. T. Almeida, A. E. Ferreira, and L. H. Costa, “Caracterização de desempenho de uma rede LoRa em ambientes urbanos: simulação vs. prática (in Portuguese),” in III Workshop de Computação Urbana (COURB), Gramado, Brazil, 2019, pp. 167–180, https://doi.org/10.5753/courb.2019.7476.
+
+%ADOPTED EXTRACTION METHOD: measurement PL data were obtained by analyzing the received power graphic of the reference. Horizontal lines were drawn in the graphic for known received power values, obtained from successive arithmetic mean calculations. Once a power sample was detected between two horizontal lines, a new arithmetic mean calculation was made, using those known power values. For the result of the calculation, a new horizontal line was drawn. The process continued until a new horizontal line passed through the received power sample. After, the link budget was used to obtain the associated PL data. 
+Other input values, such as terrain profile, representative clutter height, distance vector, latitude, longitude, clutter type for each profile point, radio-climatic zones, were obtained by mapping the links in Google Earth. 
+
+%-------INPUT DATA--------------------------------------------------------
+
+f = 915; %frequency in MHz
+TxRx = [0.912 2.001 2.645 4.259 5.060]; %vector containing the distances Tx-Rx for each link, in km 
+%pos1 -> 912m
+%pos2 -> 2001m
+%pos3 -> 2645m
+%pos4 -> 4259m
+%pos5 -> 5060m
+
+TxRx_log = 10*log10(TxRx/0.1);
+
+% mean PL data
+PL_media1 = 133; %pos1
+PL_media2 = 140.5; %pos2
+PL_media3 = 135.5; %pos3
+PL_media4 = 148; %pos4
+PL_media5 = 153; %pos5
+
+PL_media = [PL_media1; PL_media2; PL_media3; PL_media4; PL_media5];
+
+
+% Input values for Egli model
+hb_e = [65 65 65 50 50];
+hm_e = [2 2 2 2 2];
+
+% Input values for ITU-R P.1812-5
+p = 50;  %required time percentage for which the calculated basic transmission loss is not exceeded
+f_ghz = f/1000; %frequency in GHz
+
+passo = [];
+n = 30; %number of points considered in the terrain profile
+a = 0; 
+for a = 1:length(TxRx)
+  passo(a) = TxRx(a)/(n-1); 
+endfor
+
+d1 = [0:passo(1):TxRx(1)]; % distance vector from the profile point to Tx in ‘km’ (pos1)
+d2 = [0:passo(2):TxRx(2)]; % distance vector from the profile point to Tx in ‘km’ (pos2)
+d3 = [0:passo(3):TxRx(3)]; % distance vector from the profile point to Tx in ‘km’ (pos3)
+d4 = [0:passo(4):TxRx(4)]; % distance vector from the profile point to Tx in ‘km’ (pos4)
+d5 = [0:passo(5):TxRx(5)]; % distance vector from the profile point to Tx in ‘km’ (pos5)
+
+d = [d1; d2; d3; d4; d5]; 
+
+
+h1 = [1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 2 2 2 1 1 1 1 2 2]; %height of each profile point between Tx and Rx, related to sea %level, in ‘m’ (pos1)
+h2 = [0 0 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 3 1 1 2]; %height of each profile point between Tx and Rx, related to sea %level, in ‘m’ (pos2)
+h3 = [2 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 2 1 2]; %height of each profile point between Tx and Rx, related to sea %level, in ‘m’ (pos3)
+h4 = [1 0 0 0 0 0 0 0 0 0 0 0 0 1 1 1 1 0 0 0 0 0 0 0 1 1 1 1 0 1]; %height of each profile point between Tx and Rx, related to sea %level, in ‘m’ (pos4)
+h5 = [5 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 12 0 0 0 0 0 0 0 0 1 1 1 1]; %height of each profile point between Tx and Rx, related to sea %level, in ‘m’ (pos5)
+
+h = [h1; h2; h3; h4; h5];
+
+
+R1 = [15 15 15 15 0 0 0 0 0 15 0 15 0 0 0 0 15 0 15 0 15 15 0 0 0 0 15 15 15 15]; %representative clutter height for each profile %point in ‘m’ (pos1)
+R2 = [15 10 10 0 15 0 0 10 10 10 10 10 0 15 15 15 0 0 0 0 0 0 0 0 0 15 0 0 15 15]; %representative clutter height for each profile %point in ‘m’ (pos2)
+R3 = [15 0 0 15 15 15 0 15 0 0 15 15 0 15 0 0 0 15 15 15 10 15 0 0 0 15 15 0 0 15]; %representative clutter height for each %profile point in ‘m’ (pos3) 
+R4 = [15 0 0 0 0 0 0 0 0 0 0 0 0 15 0 0 10 0 0 0 0 0 0 0 0 15 0 15 15 15]; %representative clutter height for each profile point in ‘m’ (pos4)
+R5 = [10 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 15 0 0 0 0 0 0 0 0 0 0 0 15]; %representative clutter height for each profile point in ‘m’ (pos5)
+
+R = [R1; R2; R3; R4; R5];
+
+
+Ct1 = [4 4 4 4 2 2 2 2 2 4 2 4 2 2 2 2 4 2 4 2 4 4 2 2 2 2 4 4 4 4]; %clutter type for each profile point: Water/sea (1), 
+ %Open/rural (2), Suburban (3), Urban/trees/forest (4), Dense urban (5). (pos1)
+Ct2 = [4 3 3 2 4 2 2 3 3 3 3 3 2 4 4 4 2 2 2 2 2 2 2 2 2 4 2 2 4 4]; %clutter type for each profile point: Water/sea (1), 
+ %Open/rural (2), Suburban (3), Urban/trees/forest (4), Dense urban (5). (pos2)
+Ct3 = [4 2 2 4 4 4 2 4 2 2 4 4 2 4 2 2 2 4 4 4 3 4 2 2 2 4 4 2 2 4]; %clutter type for each profile point: Water/sea (1), 
+ %Open/rural (2), Suburban (3), Urban/trees/forest (4), Dense urban (5). (pos3)
+Ct4 = [4 1 1 1 1 1 1 1 1 1 1 1 1 4 2 2 3 1 1 1 1 1 1 1 2 4 2 4 4 4]; %clutter type for each profile point: Water/sea (1), 
+ %Open/rural (2), Suburban (3), Urban/trees/forest (4), Dense urban (5). (pos4)
+Ct5 = [3 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 4 1 1 1 1 1 1 1 1 2 2 2 4]; %clutter type for each profile point: Water/sea (1), 
+ %Open/rural (2), Suburban (3), Urban/trees/forest (4), Dense urban (5). (pos5)
+
+Ct = [Ct1; Ct2; Ct3; Ct4; Ct5];
+
+
+zone1 = 3*ones(1,length(d1)); %'radio-climatic zone types': Inland (4), Coastal land (3), or Sea (1). (pos1)
+zone2 = 3*ones(1,length(d2)); %'radio-climatic zone types': Inland (4), Coastal land (3), or Sea (1). (pos2)
+zone3 = 3*ones(1,length(d3)); %'radio-climatic zone types': Inland (4), Coastal land (3), or Sea (1). (pos3)
+zone4 = [3 1*ones(1,length(d4)-18) 3 3 3 3 1*ones(1, length(d4)-23) 3 3 3 3 3 3]; %'radio-climatic zone types': Inland (4), %Coastal land (3), or Sea (1). (pos4)
+zone5 = [3 1*ones(1,length(d5)-14) 3 1*ones(1, length(d5)-22) 3 3 3 3]; %'radio-climatic zone types': Inland (4), Coastal land %(3), or Sea (1). (pos5)
+ 
+zone = [zone1; zone2; zone3; zone4; zone5];
+
+
+htg = [2 2 2 2 2]; % Tx height, related to the ground 
+hrg = [65 65 65 50 50]; % Rx height, related to the ground
+
+phi_1t = -22.850072;  %latitude Tx1
+lam_1t = -43.235061;  %longitude Tx1
+phi_2t = -22.859161;  %latitude Tx2
+lam_2t = -43.230928;  %longitude Tx2
+phi_3t = -22.862022;  %latitude Tx3
+lam_3t = -43.223358;  %longitude Tx3
+phi_4t = -22.820864;  %latitude Tx4
+lam_4t = -43.227575;  %longitude Tx4
+phi_5t = -22.816458;  %latitude Tx5
+lam_5t = -43.213433;  %longitude Tx5
+
+phi_1r = -22.842222; %latitude Rx1 (Hospital)
+lam_1r = -43.237678; %longitude Rx1
+phi_2r = -22.859172; %latitude Rx2 (CT)
+lam_2r = -43.230911; %longitude Rx2
+
+phi_t = [phi_1t; phi_2t; phi_3t; phi_4t; phi_5t];
+lam_t = [lam_1t; lam_2t; lam_3t; lam_4t; lam_5t];
+phi_r = [phi_1r; phi_1r; phi_1r; phi_2r; phi_2r];
+lam_r = [lam_1r; lam_1r; lam_1r; lam_2r; lam_2r];
+
+pol = 2; %tipo de polarização: (1) horizontal, (2) vertical (provided by the author of the reference)
+%-------------------------------------------------------------------------------
+
+%Free Space Path Loss model (FSPL)
+L_fsl = 32.4 + 20*log10(f) + 20*log10(TxRx);
+scatter(TxRx_log,L_fsl,'g',"filled"); hold on; 
+
+
+%Egli model (40MHz < f < 1GHz, d <= 60km) Reference: Propagation Loss Prediction: A Comparative Study with
+%application to the mobile radio channel (Delisle, 1985)
+k = 0;
+for k = 1:length(TxRx)
+  L1_e(k) = 20*log10(f) + 40*log10(TxRx(k)) - 20*log10(hb_e(k)); 
+
+  if hm_e(k) <= 10
+    L2_e(k) = 76.3 - 10*log10(hm_e(k));
+  elseif hm_e(k) > 10
+    L2_e(k) = 85.9 - 20*log10(hm_e(k));
+    
+  endif
+endfor
+L_e = L1_e + L2_e;  %PL final value by using Egli model
+scatter(TxRx_log,L_e,'b',"filled"); hold on; 
+
+% ITU-R P.1812-5 model
+Lb = [];
+m = 0; 
+j = 1;
+
+for m = 1:length(TxRx)  
+  Lb(j) = tl_p1812(f_ghz, p, d(m,:), h(m,:), R(m,:), Ct(m,:), zone(m,:), ...
+  htg, hrg, phi_t(m,:), phi_r(m,:), lam_t(m,:), lam_r(m,:), pol); 
+  j = j + 1; 
+endfor
+
+scatter(TxRx_log, Lb, 'r', "filled"); hold on; 
+
+PL_m = [PL_media1 PL_media2 PL_media3 PL_media4 PL_media5]
+scatter(TxRx_log,PL_m,'x'); grid minor on;
+
+xlabel('distance 10log[Tx-Rx(km)/0.1]'); 
+ylabel(‘Path loss (dB)’);
+title('C O M P A R I S O N  O F  P R O P A G A T I O N  M O D E L S');
+legend('FSPL', 'Egli', 'P.1812', 'Mean Values');
+
+%------ CALCULATES THE ABSOLUTE ERROR BETWEEN PREDICTED PL AND MEAN PL VALUES ---------
+Dif_p1812 = abs(PL_m - Lb)
+Dif_Egli = abs(PL_m - L_e)
+Dif_FSPL = abs(PL_m - L_fsl)
+
